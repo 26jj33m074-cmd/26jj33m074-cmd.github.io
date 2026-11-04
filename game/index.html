@@ -26,7 +26,7 @@ for(let side of [-1,1])for(let z=5;z>-390;z-=24){
  const glow=new THREE.Mesh(new THREE.BoxGeometry(.58,.06,.78),new THREE.MeshStandardMaterial({color:0xffe6b3,emissive:0xffc66b,emissiveIntensity:2.2}));glow.position.set(x-side*1.75,5.81,z);scene.add(glow);
  const lamp=new THREE.PointLight(0xffd99b,.65,15,2);lamp.position.set(x-side*1.75,5.55,z);scene.add(lamp);
 }
-for(let side of [-1,1])for(let z=0;z>-400;z-=35){const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.22,.3,2.4,7),mat(0x604a35));trunk.position.set(side*(13+Math.sin(z)*1.5),1.2,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(2.1,8,7),mat(0x376344));crown.position.set(trunk.position.x,3.5,z);crown.castShadow=true;scene.add(crown)}
+for(let side of [-1,1])for(let z=0;z>-400;z-=35){if(side===1&&z<-25&&z>-60)continue;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.22,.3,2.4,7),mat(0x604a35));trunk.position.set(side*(13+Math.sin(z)*1.5),1.2,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(2.1,8,7),mat(0x376344));crown.position.set(trunk.position.x,3.5,z);crown.castShadow=true;scene.add(crown)}
 // 1인칭 시점: 손과 팔은 표시하지 않습니다.
 scene.add(camera);
 // 도로 옆에 들어갈 수 있는 아담한 1층 집
@@ -46,8 +46,9 @@ box(2.9,.45,1.05,sofaMat,houseX,.55,-40.5);box(2.9,1.05,.38,sofaMat,houseX,.95,-
 for(const sx of [houseX-1.05,houseX+1.05])box(.5,.8,1.05,sofaMat,sx,.8,-40.5);
 for(const sx of [houseX-.72,houseX+.72])box(.85,.18,.65,cushion,sx,1.18,-40.65);
 box(2.3,1.35,.16,wood,houseX,1.45,-49.55);box(1.95,1.08,.08,screen,houseX,1.5,-49.43);box(2.5,.12,.7,wood,houseX,.5,-49.1);
-// 도로에서 현관까지 이어지는 길
-box(2.3,.08,7,concrete,7.5,.08,-36);
+// 도로에서 현관까지 이어지는 길: 도로 옆에서 문까지 연결하고 집 안쪽까지 이어집니다.
+box(7.8,.08,2.4,concrete,9.9,.08,-34.8);
+box(2.4,.08,7.2,concrete,13.5,.08,-39.6);
 const keys={};let jumpVelocity=0,jumpHeight=0;addEventListener('keydown',e=>{const k=e.key.toLowerCase();keys[k]=true;if(e.code==='Space'){e.preventDefault();if(!e.repeat&&jumpHeight<=0.001)jumpVelocity=7.5;}});addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});addEventListener('blur',()=>Object.keys(keys).forEach(k=>keys[k]=false));
 let yaw=0,pitch=0,locked=false;const overlay=document.getElementById('overlay');
 document.getElementById('start').addEventListener('click',()=>renderer.domElement.requestPointerLock());
