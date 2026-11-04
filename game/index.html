@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>3D 도로 탐험</title><style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101923;color:#fff;font-family:system-ui,sans-serif}canvas{display:block}#hud{position:fixed;inset:0;pointer-events:none}.top{position:absolute;top:18px;left:18px;padding:12px 16px;border:1px solid #ffffff35;border-radius:14px;background:#07111bbd;backdrop-filter:blur(8px)}.top b{display:block;font-size:15px}.top span{font-size:12px;color:#c5d3df}.help{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);padding:10px 15px;border-radius:12px;background:#07111bcc;color:#e4edf5;font-size:13px;text-align:center;white-space:nowrap}.cross{position:absolute;left:50%;top:50%;width:6px;height:6px;border:1px solid #fff;border-radius:50%;transform:translate(-50%,-50%);opacity:.8}#overlay{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(#07111b99,#07111bdd);z-index:3}#panel{max-width:440px;margin:20px;padding:30px;text-align:center;border:1px solid #ffffff35;border-radius:22px;background:#142638ed;box-shadow:0 20px 80px #0008}h1{margin:0 0 10px;font-size:32px}#panel p{color:#c4d1df;line-height:1.6}button{border:0;border-radius:999px;padding:13px 24px;background:#80e0c3;color:#08251e;font-size:16px;font-weight:800;cursor:pointer}a{position:fixed;right:18px;top:20px;color:#dbe8f5;text-decoration:none;font-size:13px;z-index:2}
+</style></head><body>
+<a href="../">← 홈으로</a><div id="hud"><div class="top"><b>3D 도로 탐험</b><span>W A S D · 마우스로 둘러보기</span></div><div class="cross"></div><div class="help">W 앞으로 · S 뒤로 · A 왼쪽 · D 오른쪽 · ESC 마우스 잠금 해제</div></div>
+<div id="overlay"><div id="panel"><h1>도로 탐험</h1><p>가로등이 늘어선 3D 도로를 걸어보세요.<br>W A S D 키로 이동하고 마우스로 주변을 둘러볼 수 있어요.</p><button id="start">게임 시작</button></div></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x91b8d2);scene.fog=new THREE.Fog(0x91b8d2,55,230);
+const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,500);camera.position.set(0,1.72,7);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xe4f4ff,0x536344,2));
+const sun=new THREE.DirectionalLight(0xfff1d5,2.2);sun.position.set(-25,45,18);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-45;sun.shadow.camera.right=45;sun.shadow.camera.top=55;sun.shadow.camera.bottom=-55;scene.add(sun);
+const mat=(color,roughness=.85)=>new THREE.MeshStandardMaterial({color,roughness});
+const grass=mat(0x537d4c), asphalt=mat(0x30363d), concrete=mat(0xaaa99e), white=mat(0xe9e9df), poleMat=mat(0x343b43,.5), gold=mat(0xffe3a0);
+function box(w,h,d,material,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m}
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500),grass);ground.rotation.x=-Math.PI/2;ground.position.y=-.08;ground.receiveShadow=true;scene.add(ground);
+box(12,.12,500,asphalt,0,-.01,-180);
+for(let x of [-6.15,6.15])box(.18,.16,500,concrete,x,.04,-180);
+for(let z=12;z>-420;z-=12)box(.16,.025,5,white,0,.065,z);
+for(let side of [-1,1])for(let z=5;z>-390;z-=24){
+ const x=side*8.2;
+ const post=new THREE.Mesh(new THREE.CylinderGeometry(.11,.16,6.2,10),poleMat);post.position.set(x,3.1,z);post.castShadow=true;scene.add(post);
+ const arm=box(.12,.12,2.0,poleMat,x-side*.9,6.05,z);arm.rotation.z=side*.12;
+ const head=box(.72,.22,1.0,poleMat,x-side*1.75,5.95,z);
+ const glow=new THREE.Mesh(new THREE.BoxGeometry(.58,.06,.78),new THREE.MeshStandardMaterial({color:0xffe6b3,emissive:0xffc66b,emissiveIntensity:2.2}));glow.position.set(x-side*1.75,5.81,z);scene.add(glow);
+ const lamp=new THREE.PointLight(0xffd99b,.65,15,2);lamp.position.set(x-side*1.75,5.55,z);scene.add(lamp);
+}
+for(let side of [-1,1])for(let z=0;z>-400;z-=35){const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.22,.3,2.4,7),mat(0x604a35));trunk.position.set(side*(13+Math.sin(z)*1.5),1.2,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(2.1,8,7),mat(0x376344));crown.position.set(trunk.position.x,3.5,z);crown.castShadow=true;scene.add(crown)}
+// First-person character: visible sleeves and hands attached to the camera.
+const avatar=new THREE.Group();camera.add(avatar);scene.add(camera);
+const sleeveMat=mat(0x294c70),skinMat=mat(0xd7a47e);
+function limb(radius1,radius2,length,material,pos,rot){const m=new THREE.Mesh(new THREE.CylinderGeometry(radius1,radius2,length,10),material);m.position.set(...pos);m.rotation.set(...rot);m.castShadow=true;avatar.add(m);return m}
+limb(.12,.16,.62,sleeveMat,[.38,-.38,-.62],[0,0,-.55]);limb(.12,.16,.62,sleeveMat,[-.38,-.38,-.62],[0,0,.55]);
+limb(.105,.11,.22,skinMat,[.56,-.61,-.82],[0,0,-.55]);limb(.105,.11,.22,skinMat,[-.56,-.61,-.82],[0,0,.55]);
+const keys={};addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true});addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});addEventListener('blur',()=>Object.keys(keys).forEach(k=>keys[k]=false));
+let yaw=0,pitch=0,locked=false;const overlay=document.getElementById('overlay');
+document.getElementById('start').addEventListener('click',()=>renderer.domElement.requestPointerLock());
+document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===renderer.domElement;overlay.style.display=locked?'none':'grid';});
+document.addEventListener('mousemove',e=>{if(!locked)return;yaw-=e.movementX*.0022;pitch-=e.movementY*.0022;pitch=Math.max(-1.35,Math.min(1.35,pitch));camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0)});
+const clock=new THREE.Clock();let walk=0;
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);if(locked){const speed=8*dt;const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));let move=new THREE.Vector3();if(keys.w)move.add(forward);if(keys.s)move.sub(forward);if(keys.d)move.add(right);if(keys.a)move.sub(right);if(move.lengthSq()>0){move.normalize().multiplyScalar(speed);camera.position.add(move);walk+=dt*10;}camera.position.x=THREE.MathUtils.clamp(camera.position.x,-5.1,5.1);camera.position.y=1.72+Math.sin(walk)*.025*(move.lengthSq()?1:0);camera.position.z=Math.max(-410,Math.min(18,camera.position.z));avatar.position.y=Math.sin(walk)*.012;}renderer.render(scene,camera)}
+animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script></body></html>
