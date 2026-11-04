@@ -2,8 +2,8 @@
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>3D 도로 탐험</title><style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101923;color:#fff;font-family:system-ui,sans-serif}canvas{display:block}#hud{position:fixed;inset:0;pointer-events:none}.top{position:absolute;top:18px;left:18px;padding:12px 16px;border:1px solid #ffffff35;border-radius:14px;background:#07111bbd;backdrop-filter:blur(8px)}.top b{display:block;font-size:15px}.top span{font-size:12px;color:#c5d3df}.help{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);padding:10px 15px;border-radius:12px;background:#07111bcc;color:#e4edf5;font-size:13px;text-align:center;white-space:nowrap}.cross{position:absolute;left:50%;top:50%;width:6px;height:6px;border:1px solid #fff;border-radius:50%;transform:translate(-50%,-50%);opacity:.8}#overlay{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(#07111b99,#07111bdd);z-index:3}#panel{max-width:440px;margin:20px;padding:30px;text-align:center;border:1px solid #ffffff35;border-radius:22px;background:#142638ed;box-shadow:0 20px 80px #0008}h1{margin:0 0 10px;font-size:32px}#panel p{color:#c4d1df;line-height:1.6}button{border:0;border-radius:999px;padding:13px 24px;background:#80e0c3;color:#08251e;font-size:16px;font-weight:800;cursor:pointer}a{position:fixed;right:18px;top:20px;color:#dbe8f5;text-decoration:none;font-size:13px;z-index:2}
 </style></head><body>
-<a href="../">← 홈으로</a><div id="hud"><div class="top"><b>3D 도로 탐험</b><span>W A S D · SPACE 점프 · 클릭 상호작용 · N 일어나기</span></div><div class="cross"></div><div class="help">W A S D 이동 · SPACE 점프 · 문/소파 조준 후 클릭 · N 일어나기 · ESC 잠금 해제</div></div>
-<div id="overlay"><div id="panel"><h1>도로 탐험</h1><p>가로등이 늘어선 3D 도로를 탐험하고 집 안에도 들어가 보세요.<br>W A S D 이동 · SPACE 점프 · 문과 소파를 조준하고 클릭 · N 일어나기</p><button id="start">게임 시작</button></div></div>
+<a href="../">← 홈으로</a><div id="hud"><div class="top"><b>3D 도로 탐험</b><span>W A S D · SPACE 점프 · 클릭 상호작용 · N 일어나기</span></div><div class="cross"></div><div class="help">W A S D 이동 · SPACE 점프 · 문/소파/막대기 조준 후 클릭 · 막대기를 들고 오른쪽 클릭으로 샌드백 치기 · N 일어나기 · ESC 잠금 해제</div></div>
+<div id="overlay"><div id="panel"><h1>도로 탐험</h1><p>가로등이 늘어선 3D 도로를 탐험하고 집 안에도 들어가 보세요.<br>W A S D 이동 · SPACE 점프 · 문/소파/막대기 조준 후 클릭 · 막대기를 들고 오른쪽 클릭으로 샌드백 치기 · N 일어나기</p><button id="start">게임 시작</button></div></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x91b8d2);scene.fog=new THREE.Fog(0x91b8d2,55,230);
@@ -56,19 +56,42 @@ for(const sx of [houseX-.72,houseX+.72])sofaParts.push(box(.85,.18,.65,cushion,s
 const tvStand=box(2.5,.12,.7,wood,houseX,.5,-49.1);
 const tvBody=box(2.3,1.35,.16,wood,houseX,1.45,-49.55);
 const tvScreen=box(1.95,1.08,.08,screen,houseX,1.5,-49.43);
+// 집 안의 샌드백과 바닥에 무작위로 놓인 막대기
+const bagPivot=new THREE.Group();bagPivot.position.set(16.35,2.85,-45.8);scene.add(bagPivot);
+const bagChain=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.72,8),poleMat);bagChain.position.y=-.42;bagPivot.add(bagChain);
+const bagBody=new THREE.Mesh(new THREE.CylinderGeometry(.38,.42,1.35,16),mat(0x9a493d,.8));bagBody.position.y=-1.43;bagBody.castShadow=true;bagBody.receiveShadow=true;bagPivot.add(bagBody);
+const bagTop=new THREE.Mesh(new THREE.TorusGeometry(.34,.045,8,16),gold);bagTop.rotation.x=Math.PI/2;bagTop.position.y=-.79;bagPivot.add(bagTop);
+let bagShakeStart=-100;
+const stickMeshes=[],stickMaterial=mat(0x9b7048,.8),stickOutlineMaterial=new THREE.LineBasicMaterial({color:0xffe77a,transparent:true,opacity:1});
+for(let i=0;i<9;i++){
+ const group=new THREE.Group();group.position.set(7.5+Math.random()*4,.13,-8-Math.random()*23);group.rotation.y=Math.random()*Math.PI;
+ const stick=new THREE.Mesh(new THREE.CylinderGeometry(.045,.055,1.12,10),stickMaterial);stick.rotation.z=Math.PI/2;stick.castShadow=true;group.add(stick);
+ const outline=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CylinderGeometry(.065,.07,1.16,10)),stickOutlineMaterial);outline.rotation.z=Math.PI/2;outline.visible=false;group.add(outline);
+ scene.add(group);stickMeshes.push({group,mesh:stick,outline});
+}
+const heldStick=new THREE.Group();
+const heldStickBody=new THREE.Mesh(new THREE.CylinderGeometry(.045,.055,.95,10),new THREE.MeshStandardMaterial({color:0x9b7048,roughness:.8}));
+heldStickBody.rotation.z=Math.PI/2;heldStick.add(heldStickBody);heldStick.position.set(.42,-.34,-.68);heldStick.rotation.set(.15,.1,-.2);heldStick.visible=false;camera.add(heldStick);
+let hasStick=false,swingUntil=0;
 // 도로에서 현관까지 이어지는 길: 도로 옆에서 문까지 연결하고 집 안쪽까지 이어집니다.
 box(7.8,.08,2.4,concrete,9.9,.08,-34.8);
 box(2.4,.08,7.2,concrete,13.5,.08,-39.6);
-const keys={};let jumpVelocity=0,jumpHeight=0;let sitting=false,savedPitch=0;const standingEye=1.72;
-addEventListener('keydown',e=>{const k=e.key.toLowerCase();keys[k]=true;if(e.code==='Space'){e.preventDefault();if(!e.repeat&&!sitting&&jumpHeight<=0.001)jumpVelocity=7.5;}if(k==='n'&&sitting){sitting=false;camera.position.y=standingEye;pitch=savedPitch;camera.rotation.set(pitch,yaw,0);}});
+const keys={};let jumpVelocity=0,jumpHeight=0;let sitting=false,savedPitch=0,savedYaw=0;const standingEye=1.72;
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();keys[k]=true;if(e.code==='Space'){e.preventDefault();if(!e.repeat&&!sitting&&jumpHeight<=0.001)jumpVelocity=7.5;}if(k==='n'&&sitting){sitting=false;camera.position.set(13.5,standingEye,-41.7);pitch=savedPitch;yaw=savedYaw;camera.rotation.set(pitch,yaw,0);}});
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});addEventListener('blur',()=>Object.keys(keys).forEach(k=>keys[k]=false));
 let yaw=0,pitch=0,locked=false;const overlay=document.getElementById('overlay');
 document.getElementById('start').addEventListener('click',()=>renderer.domElement.requestPointerLock());
 document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===renderer.domElement;overlay.style.display=locked?'none':'grid';});
 document.addEventListener('mousemove',e=>{if(!locked)return;yaw-=e.movementX*.0022;pitch-=e.movementY*.0022;pitch=Math.max(-1.35,Math.min(1.35,pitch));camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);});
 const raycaster=new THREE.Raycaster(),screenCenter=new THREE.Vector2(0,0);
-function aimedObjects(){raycaster.setFromCamera(screenCenter,camera);return raycaster.intersectObjects([door,...sofaParts],false);}
-renderer.domElement.addEventListener('click',()=>{if(!locked)return;const hits=aimedObjects();if(!hits.length)return;const target=hits[0].object;if(target===door){doorTarget=doorOpen?0:Math.PI/2;doorOpen=!doorOpen;}else if(sofaParts.includes(target)&&!sitting){sitting=true;savedPitch=pitch;camera.position.y=.92;pitch=THREE.MathUtils.clamp(pitch+.08,-1.35,1.35);camera.rotation.set(pitch,yaw,0);}});
+function aimedObjects(){raycaster.setFromCamera(screenCenter,camera);return raycaster.intersectObjects([door,...sofaParts,...stickMeshes.map(s=>s.mesh),bagBody],false);}
+renderer.domElement.addEventListener('click',()=>{if(!locked)return;const hits=aimedObjects();if(!hits.length)return;const target=hits[0].object;
+ if(target===door){doorTarget=doorOpen?0:Math.PI/2;doorOpen=!doorOpen;}
+ else if(sofaParts.includes(target)&&!sitting){sitting=true;savedPitch=pitch;savedYaw=yaw;camera.position.set(houseX,1.55,-40.38);yaw=0;pitch=0;camera.rotation.set(pitch,yaw,0);}
+ else {const found=stickMeshes.find(s=>s.mesh===target);if(found&&!hasStick){hasStick=true;heldStick.visible=true;scene.remove(found.group);stickMeshes.splice(stickMeshes.indexOf(found),1);}}
+});
+renderer.domElement.addEventListener('contextmenu',e=>e.preventDefault());
+renderer.domElement.addEventListener('mousedown',e=>{if(e.button!==2||!locked||!hasStick)return;const hits=aimedObjects();if(!hits.length||hits[0].object!==bagBody||hits[0].distance>4.2)return;bagShakeStart=clock.elapsedTime;swingUntil=clock.elapsedTime+.28;});
 const clock=new THREE.Clock();let walk=0;
 function collidesHouse(x,z){
  const r=.34;
@@ -79,7 +102,7 @@ function collidesHouse(x,z){
  if(inside(10.7,frontZ,1.7,.18)||inside(16.3,frontZ,1.7,.18))return true;
  if(!doorOpen&&inside(13.5,frontZ-.2,.9,.12))return true;
  // 소파와 TV/TV장도 충돌체로 처리합니다.
- if(inside(13.5,-40.55,1.52,.62))return true;
+ if(!sitting&&inside(13.5,-40.55,1.52,.62))return true;
  if(inside(13.5,-49.2,1.3,.5))return true;
  return false;
 }
@@ -87,6 +110,10 @@ function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDel
  doorPivot.rotation.y=THREE.MathUtils.damp(doorPivot.rotation.y,doorTarget,8,dt);
  if(locked&&!sitting){const speed=8*dt;const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));let move=new THREE.Vector3();if(keys.w)move.add(forward);if(keys.s)move.sub(forward);if(keys.d)move.add(right);if(keys.a)move.sub(right);if(move.lengthSq()>0){move.normalize().multiplyScalar(speed);const nx=THREE.MathUtils.clamp(camera.position.x+move.x,-2.5,20.5),nz=Math.max(-410,Math.min(18,camera.position.z+move.z));if(!collidesHouse(nx,camera.position.z))camera.position.x=nx;if(!collidesHouse(camera.position.x,nz))camera.position.z=nz;walk+=dt*10;}jumpVelocity-=19*dt;jumpHeight=Math.max(0,jumpHeight+jumpVelocity*dt);if(jumpHeight===0)jumpVelocity=0;camera.position.y=standingEye+jumpHeight+Math.sin(walk)*.025*(move.lengthSq()?1:0);}
  const hits=aimedObjects();const hovering=locked&&hits.length>0&&hits[0].object===door;doorOutline.visible=hovering;doorMat.emissive.setHex(hovering?0x493019:0x000000);doorMat.emissiveIntensity=hovering?1.6:0;
+ for(const item of stickMeshes)item.outline.visible=locked&&hits.length>0&&hits[0].object===item.mesh;
+ const bagT=clock.elapsedTime-bagShakeStart;
+ if(bagT>=0&&bagT<5){bagPivot.rotation.z=Math.sin(bagT*13)*.34*(1-bagT/5);}else bagPivot.rotation.z=THREE.MathUtils.damp(bagPivot.rotation.z,0,7,dt);
+ if(clock.elapsedTime<swingUntil){const p=1-(swingUntil-clock.elapsedTime)/.28;heldStick.rotation.z=-.2-Math.sin(p*Math.PI)*.95;}else heldStick.rotation.z=THREE.MathUtils.damp(heldStick.rotation.z,-.2,12,dt);
  renderer.render(scene,camera)}
 animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
