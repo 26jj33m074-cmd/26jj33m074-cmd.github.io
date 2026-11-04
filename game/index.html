@@ -2,8 +2,8 @@
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>3D 도로 탐험</title><style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101923;color:#fff;font-family:system-ui,sans-serif}canvas{display:block}#hud{position:fixed;inset:0;pointer-events:none}.top{position:absolute;top:18px;left:18px;padding:12px 16px;border:1px solid #ffffff35;border-radius:14px;background:#07111bbd;backdrop-filter:blur(8px)}.top b{display:block;font-size:15px}.top span{font-size:12px;color:#c5d3df}.help{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);padding:10px 15px;border-radius:12px;background:#07111bcc;color:#e4edf5;font-size:13px;text-align:center;white-space:nowrap}.cross{position:absolute;left:50%;top:50%;width:6px;height:6px;border:1px solid #fff;border-radius:50%;transform:translate(-50%,-50%);opacity:.8}#overlay{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(#07111b99,#07111bdd);z-index:3}#panel{max-width:440px;margin:20px;padding:30px;text-align:center;border:1px solid #ffffff35;border-radius:22px;background:#142638ed;box-shadow:0 20px 80px #0008}h1{margin:0 0 10px;font-size:32px}#panel p{color:#c4d1df;line-height:1.6}button{border:0;border-radius:999px;padding:13px 24px;background:#80e0c3;color:#08251e;font-size:16px;font-weight:800;cursor:pointer}a{position:fixed;right:18px;top:20px;color:#dbe8f5;text-decoration:none;font-size:13px;z-index:2}
 </style></head><body>
-<a href="../">← 홈으로</a><div id="hud"><div class="top"><b>3D 도로 탐험</b><span>W A S D · 마우스로 둘러보기</span></div><div class="cross"></div><div class="help">W 앞으로 · S 뒤로 · A 왼쪽 · D 오른쪽 · ESC 마우스 잠금 해제</div></div>
-<div id="overlay"><div id="panel"><h1>도로 탐험</h1><p>가로등이 늘어선 3D 도로를 걸어보세요.<br>W A S D 키로 이동하고 마우스로 주변을 둘러볼 수 있어요.</p><button id="start">게임 시작</button></div></div>
+<a href="../">← 홈으로</a><div id="hud"><div class="top"><b>3D 도로 탐험</b><span>W A S D · SPACE 점프 · 마우스로 둘러보기</span></div><div class="cross"></div><div class="help">W 앞으로 · S 뒤로 · A 왼쪽 · D 오른쪽 · SPACE 점프 · ESC 마우스 잠금 해제</div></div>
+<div id="overlay"><div id="panel"><h1>도로 탐험</h1><p>가로등이 늘어선 3D 도로를 탐험하고 집 안에도 들어가 보세요.<br>W A S D 이동 · SPACE 점프 · 마우스로 시점 회전</p><button id="start">게임 시작</button></div></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x91b8d2);scene.fog=new THREE.Fog(0x91b8d2,55,230);
@@ -27,18 +27,33 @@ for(let side of [-1,1])for(let z=5;z>-390;z-=24){
  const lamp=new THREE.PointLight(0xffd99b,.65,15,2);lamp.position.set(x-side*1.75,5.55,z);scene.add(lamp);
 }
 for(let side of [-1,1])for(let z=0;z>-400;z-=35){const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.22,.3,2.4,7),mat(0x604a35));trunk.position.set(side*(13+Math.sin(z)*1.5),1.2,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(2.1,8,7),mat(0x376344));crown.position.set(trunk.position.x,3.5,z);crown.castShadow=true;scene.add(crown)}
-// First-person character: visible sleeves and hands attached to the camera.
-const avatar=new THREE.Group();camera.add(avatar);scene.add(camera);
-const sleeveMat=mat(0x294c70),skinMat=mat(0xd7a47e);
-function limb(radius1,radius2,length,material,pos,rot){const m=new THREE.Mesh(new THREE.CylinderGeometry(radius1,radius2,length,10),material);m.position.set(...pos);m.rotation.set(...rot);m.castShadow=true;avatar.add(m);return m}
-limb(.12,.16,.62,sleeveMat,[.38,-.38,-.62],[0,0,-.55]);limb(.12,.16,.62,sleeveMat,[-.38,-.38,-.62],[0,0,.55]);
-limb(.105,.11,.22,skinMat,[.56,-.61,-.82],[0,0,-.55]);limb(.105,.11,.22,skinMat,[-.56,-.61,-.82],[0,0,.55]);
-const keys={};addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true});addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});addEventListener('blur',()=>Object.keys(keys).forEach(k=>keys[k]=false));
+// 1인칭 시점: 손과 팔은 표시하지 않습니다.
+scene.add(camera);
+// 도로 옆에 들어갈 수 있는 아담한 1층 집
+const houseX=13.5, frontZ=-36, backZ=-50;
+const wall=mat(0xe7d6b8), roof=mat(0x704b3b), wood=mat(0x81583e), sofaMat=mat(0x477b91), cushion=mat(0x75a4b2), screen=mat(0x101820,.25);
+box(9,.22,14,concrete,houseX,.08,-43);
+// 외벽과 현관 입구
+box(9,3.6,.28,wall,houseX,1.9,backZ);
+box(.28,3.6,14,wall,9,1.9,-43);box(.28,3.6,14,wall,18,1.9,-43);
+box(3.4,3.6,.28,wall,10.7,1.9,frontZ);box(3.4,3.6,.28,wall,16.3,1.9,frontZ);box(2.2,.55,.28,wall,houseX,3.45,frontZ);
+box(9.5,.35,14.5,roof,houseX,3.95,-43);
+// 문틀과 창문
+box(.12,2.7,.18,wood,12.55,1.45,frontZ-.08);box(.12,2.7,.18,wood,14.45,1.45,frontZ-.08);box(2,.12,.18,wood,houseX,2.82,frontZ-.08);
+for(const wx of [10.3,16.7]){box(1.25,1.15,.12,mat(0x8bc6d8),wx,2.2,frontZ-.17);box(1.4,.1,.18,wood,wx,2.2,frontZ-.24);}
+// 거실의 소파와 TV
+box(2.9,.45,1.05,sofaMat,houseX,.55,-40.5);box(2.9,1.05,.38,sofaMat,houseX,.95,-40.95);
+for(const sx of [houseX-1.05,houseX+1.05])box(.5,.8,1.05,sofaMat,sx,.8,-40.5);
+for(const sx of [houseX-.72,houseX+.72])box(.85,.18,.65,cushion,sx,1.18,-40.65);
+box(2.3,1.35,.16,wood,houseX,1.45,-49.55);box(1.95,1.08,.08,screen,houseX,1.5,-49.43);box(2.5,.12,.7,wood,houseX,.5,-49.1);
+// 도로에서 현관까지 이어지는 길
+box(2.3,.08,7,concrete,7.5,.08,-36);
+const keys={};let jumpVelocity=0,jumpHeight=0;addEventListener('keydown',e=>{const k=e.key.toLowerCase();keys[k]=true;if(e.code==='Space'){e.preventDefault();if(!e.repeat&&jumpHeight<=0.001)jumpVelocity=7.5;}});addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});addEventListener('blur',()=>Object.keys(keys).forEach(k=>keys[k]=false));
 let yaw=0,pitch=0,locked=false;const overlay=document.getElementById('overlay');
 document.getElementById('start').addEventListener('click',()=>renderer.domElement.requestPointerLock());
 document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===renderer.domElement;overlay.style.display=locked?'none':'grid';});
 document.addEventListener('mousemove',e=>{if(!locked)return;yaw-=e.movementX*.0022;pitch-=e.movementY*.0022;pitch=Math.max(-1.35,Math.min(1.35,pitch));camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0)});
 const clock=new THREE.Clock();let walk=0;
-function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);if(locked){const speed=8*dt;const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));let move=new THREE.Vector3();if(keys.w)move.add(forward);if(keys.s)move.sub(forward);if(keys.d)move.add(right);if(keys.a)move.sub(right);if(move.lengthSq()>0){move.normalize().multiplyScalar(speed);camera.position.add(move);walk+=dt*10;}camera.position.x=THREE.MathUtils.clamp(camera.position.x,-5.1,5.1);camera.position.y=1.72+Math.sin(walk)*.025*(move.lengthSq()?1:0);camera.position.z=Math.max(-410,Math.min(18,camera.position.z));avatar.position.y=Math.sin(walk)*.012;}renderer.render(scene,camera)}
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);if(locked){const speed=8*dt;const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));let move=new THREE.Vector3();if(keys.w)move.add(forward);if(keys.s)move.sub(forward);if(keys.d)move.add(right);if(keys.a)move.sub(right);if(move.lengthSq()>0){move.normalize().multiplyScalar(speed);camera.position.add(move);walk+=dt*10;}camera.position.x=THREE.MathUtils.clamp(camera.position.x,-2.5,20.5);camera.position.z=Math.max(-410,Math.min(18,camera.position.z));jumpVelocity-=19*dt;jumpHeight=Math.max(0,jumpHeight+jumpVelocity*dt);if(jumpHeight===0)jumpVelocity=0;camera.position.y=1.72+jumpHeight+Math.sin(walk)*.025*(move.lengthSq()?1:0);}renderer.render(scene,camera)}
 animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
