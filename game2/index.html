@@ -69,8 +69,8 @@ function init3D(){
  wall(0,2,-17,34,4,1);wall(-17,2,0,1,4,34);wall(17,2,0,1,4,34);
  for(let i=-1;i<=1;i++){wall(i*8,1.5,-8,2,3,2);wall(i*8,1.5,7,2,3,2)}
  const base=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,.4,32),new THREE.MeshStandardMaterial({color:0x6a3e35,emissive:0x30100a}));base.position.set(0,.2,-8);scene.add(base);
- const body=new THREE.Mesh(new THREE.CapsuleGeometry(.48,.9,6,12),new THREE.MeshStandardMaterial({color:0xff7938,emissive:0x6b210c}));body.position.set(0,1.25,-8);scene.add(body);
- const head=new THREE.Mesh(new THREE.SphereGeometry(.32,16,12),new THREE.MeshStandardMaterial({color:0xffbd8a,emissive:0x3d1408}));head.position.set(0,2.05,-8);scene.add(head);
+ const body=new THREE.Mesh(new THREE.CapsuleGeometry(.48,.9,6,12),new THREE.MeshStandardMaterial({color:0xff7938,emissive:0x6b210c}));body.position.set(0,1.25,0);scene.add(body);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.32,16,12),new THREE.MeshStandardMaterial({color:0xffbd8a,emissive:0x3d1408}));head.position.set(0,2.05,0);scene.add(head);
  enemy=new THREE.Group();enemy.add(body,head);enemy.position.set(0,0,0);scene.add(enemy);enemy.userData={body,head};
  enemyMat=body.material;raycaster=new THREE.Raycaster();
  const gun=new THREE.Mesh(new THREE.BoxGeometry(.18,.18,.7),new THREE.MeshStandardMaterial({color:0x252b38,metalness:.6,roughness:.35}));gun.position.set(.38,1.35,7.4);scene.add(gun);
