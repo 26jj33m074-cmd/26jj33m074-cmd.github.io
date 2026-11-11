@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>발로란트 연습장</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101722;color:#fff;font-family:system-ui,sans-serif}canvas{display:block}
+#hud{position:fixed;inset:0;pointer-events:none}.panel{position:absolute;top:16px;left:16px;padding:12px 16px;background:#101a2bdc;border:1px solid #ffffff35;border-radius:12px}.panel b{display:block;font-size:17px}.panel span{font-size:12px;color:#c4d2e4}
+#stats{position:absolute;right:16px;top:16px;padding:12px 16px;background:#101a2bdc;border:1px solid #ffffff35;border-radius:12px;text-align:right;font-size:14px}
+#cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:25px;font-weight:300;text-shadow:0 1px 4px #000}
+#help{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);padding:10px 14px;background:#101a2bdc;border-radius:10px;font-size:12px;color:#e3ebf5;white-space:nowrap}
+#overlay{position:fixed;inset:0;z-index:5;display:grid;place-items:center;background:#07101bdc}
+#box{max-width:480px;margin:18px;padding:30px;text-align:center;background:#142238;border:1px solid #ffffff35;border-radius:20px;box-shadow:0 20px 70px #0009}
+h1{margin:0 0 10px;font-size:clamp(30px,6vw,48px);color:#8de5d0}p{color:#c8d5e5;line-height:1.65}button{border:0;border-radius:10px;padding:13px 25px;background:#8de5d0;color:#08251e;font-size:16px;font-weight:900;cursor:pointer}
+a{position:fixed;right:18px;bottom:18px;color:#e2ecf8;text-decoration:none;z-index:2}
+</style>
+</head>
+<body>
+<div id="hud">
+ <div class="panel"><b>발로란트 연습장</b><span>권총 사격 훈련</span></div>
+ <div id="stats">점수 <b id="score">0</b><br>탄약 <b id="ammo">12 / 12</b></div>
+ <div id="cross">+</div>
+ <div id="help">W A S D 이동 · SPACE 점프 · 마우스 시점 · 클릭 사격 · R 재장전 · ESC 마우스 해제</div>
+</div>
+<a href="../">← 게임장 홈</a>
+<div id="overlay"><div id="box"><h1>발로란트 연습장</h1><p>훈련장 표적을 권총으로 맞혀 점수를 올려 봐!<br>WASD로 이동하고 스페이스 바로 점프할 수 있어.<br>마우스 클릭은 사격, R은 재장전이야.</p><button id="start">연습 시작</button></div></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x91a9b8);scene.fog=new THREE.Fog(0x91a9b8,35,100);
+const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,150);camera.position.set(0,1.7,8);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xe8f5ff,0x46515d,2));const sun=new THREE.DirectionalLight(0xffffff,2);sun.position.set(-8,15,8);sun.castShadow=true;scene.add(sun);
+const mat=(c)=>new THREE.MeshStandardMaterial({color:c,roughness:.8});
+const floor= new THREE.Mesh(new THREE.PlaneGeometry(100,100),mat(0x53616b));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+const wallMat=mat(0x293c4b);
+function block(w,h,d,x,y,z,m){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;scene.add(o);return o}
+block(42,8,1,0,4,-18,wallMat);block(1,8,42,-21,4,0,wallMat);block(1,8,42,21,4,0,wallMat);
+for(let i=-2;i<=2;i++){block(3,.25,2,i*7,.13,-5,mat(0x71828d));}
+const targets=[];
+const ringMat=mat(0xe9f0f2),coreMat=mat(0x36d6b1),centerMat=mat(0xf7bd57);
+function makeTarget(x,y,z){
+ const group=new THREE.Group();group.position.set(x,y,z);
+ const back=new THREE.Mesh(new THREE.CylinderGeometry(.82,.82,.12,32),mat(0x263440));back.rotation.x=Math.PI/2;group.add(back);
+ const outer=new THREE.Mesh(new THREE.TorusGeometry(.65,.09,10,40),ringMat);group.add(outer);
+ const inner=new THREE.Mesh(new THREE.TorusGeometry(.39,.07,10,40),coreMat);group.add(inner);
+ const core=new THREE.Mesh(new THREE.CircleGeometry(.23,32),centerMat);core.position.z=.075;group.add(core);
+ scene.add(group);targets.push({group,baseY:y,phase:Math.random()*6});
+}
+[[-8,2.2,-13],[-3,2.5,-16],[3,2.2,-14],[8,2.8,-18],[-10,3.5,-23],[0,3.4,-25],[10,3.3,-24]].forEach(p=>makeTarget(...p));
+const keys={};let yaw=0,pitch=0,locked=false,score=0,ammo=12,vy=0,onGround=true,shooting=false;
+const scoreEl=document.getElementById('score'),ammoEl=document.getElementById('ammo'),overlay=document.getElementById('overlay');
+function updateHud(){scoreEl.textContent=score;ammoEl.textContent=ammo+' / 12'}
+function lock(){renderer.domElement.requestPointerLock?.()}
+document.getElementById('start').addEventListener('click',()=>{overlay.style.display='none';lock()});
+document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===renderer.domElement});
+document.addEventListener('mousemove',e=>{if(!locked)return;yaw-=e.movementX*.0022;pitch-=e.movementY*.0022;pitch=Math.max(-1.25,Math.min(1.25,pitch));});
+document.addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space'&&onGround){vy=7.2;onGround=false}if(e.code==='KeyR'&&ammo<12){ammo=12;updateHud()}});
+document.addEventListener('keyup',e=>keys[e.code]=false);
+document.addEventListener('mousedown',e=>{if(e.button!==0)return;if(!locked){if(overlay.style.display==='none')lock();return}if(ammo<=0)return;ammo--;updateHud();shoot()});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+const raycaster=new THREE.Raycaster();
+function shoot(){
+ raycaster.setFromCamera(new THREE.Vector2(0,0),camera);
+ const hits=raycaster.intersectObjects(targets.flatMap(t=>t.group.children),false);
+ if(hits.length){const target=targets.find(t=>t.group===hits[0].object.parent);if(target){score+=10;updateHud();target.group.visible=false;setTimeout(()=>target.group.visible=true,850)}}
+}
+const clock=new THREE.Clock();
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04),t=clock.elapsedTime;
+ camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
+ const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw)),move=new THREE.Vector3();
+ if(keys.KeyW)move.add(forward);if(keys.KeyS)move.sub(forward);if(keys.KeyD)move.add(right);if(keys.KeyA)move.sub(right);
+ if(move.lengthSq())move.normalize().multiplyScalar(6*dt);
+ camera.position.add(move);camera.position.x=Math.max(-19,Math.min(19,camera.position.x));camera.position.z=Math.max(-29,Math.min(18,camera.position.z));
+ vy-=18*dt;camera.position.y+=vy*dt;if(camera.position.y<1.7){camera.position.y=1.7;vy=0;onGround=true}
+ targets.forEach((o,i)=>{o.group.position.y=o.baseY+Math.sin(t*1.3+o.phase)*.28;o.group.rotation.y=Math.sin(t*.7+i)*.12});
+ renderer.render(scene,camera)}
+animate();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body></html>
