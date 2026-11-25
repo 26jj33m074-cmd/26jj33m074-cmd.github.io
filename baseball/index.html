@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10241f">
+<title>홈런 더비</title>
+<style>
+*{box-sizing:border-box}
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#f5f7ed;background:#10241f}
+body{min-width:320px;min-height:100vh;margin:0;background:radial-gradient(ellipse at 50% 0,#294a3b,#10241f 65%)}
+button,a{font:inherit}
+.page{width:min(100% - 32px,960px);margin:auto;padding:20px 0 28px}
+.nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.nav a{color:#d9e8d9;text-decoration:none;font-size:14px}
+.brand{font-weight:900;letter-spacing:.14em;color:#d9b866;font-size:12px}
+.scoreboard{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:14px 18px;background:#101b18;border:1px solid #ffffff1f;border-radius:16px 16px 0 0;box-shadow:0 12px 30px #0003}
+.scoreline{display:flex;align-items:center;gap:10px}
+.team{font-weight:900;letter-spacing:.07em;color:#f2d882}
+.score{font-variant-numeric:tabular-nums;font-size:27px;font-weight:900}
+.divider{color:#84958b}
+.stats{display:flex;gap:18px;color:#becbbf;font-size:12px}
+.stats b{display:block;color:#fff;font-size:16px}
+.count{display:flex;align-items:center;gap:8px}
+.dots{display:flex;gap:4px}
+.dot{width:9px;height:9px;border-radius:50%;background:#34473f}
+.dot.on.ball{background:#8ad6a1}.dot.on.strike{background:#f4d276}.dot.on.out{background:#ff7868}
+.bases{display:flex;align-items:center;gap:5px;transform:rotate(45deg);margin:0 9px}
+.base{width:11px;height:11px;border:1px solid #94a49a;background:#263a32}
+.base.on{background:#f2d882;border-color:#fff0aa;box-shadow:0 0 10px #f2d88299}
+.stadium{position:relative;overflow:hidden;border:1px solid #ffffff24;border-top:0;border-radius:0 0 18px 18px;background:#173c31;box-shadow:0 24px 65px #0005}
+canvas{display:block;width:100%;aspect-ratio:900/520;touch-action:manipulation}
+.bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 4px;color:#c3d1c5;font-size:13px}
+.hint b{color:#f2d882}
+.swing{border:0;border-radius:999px;padding:13px 25px;background:#f2d882;color:#30250d;font-weight:1000;cursor:pointer;box-shadow:0 5px 0 #ad8642;transition:transform .08s,box-shadow .08s}
+.swing:active{transform:translateY(4px);box-shadow:0 1px 0 #ad8642}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;padding:22px;background:#06140ec9;backdrop-filter:blur(4px)}
+.overlay[hidden]{display:none}
+.panel{width:min(100%,440px);padding:30px;text-align:center;border:1px solid #ffffff35;border-radius:22px;background:linear-gradient(145deg,#243d31,#14271f);box-shadow:0 20px 70px #0008}
+.eyebrow{margin:0 0 8px;color:#f2d882;font-size:11px;font-weight:900;letter-spacing:.18em}
+h1{margin:0;font-size:clamp(34px,7vw,54px);line-height:1.05}
+.panel p{color:#d0ded2;line-height:1.7}
+.start{border:0;border-radius:12px;padding:14px 28px;background:#f2d882;color:#30250d;font-weight:1000;font-size:16px;cursor:pointer}
+.result{font-size:18px;font-weight:900;color:#f2d882}
+@media(max-width:600px){
+ .page{width:min(100% - 20px,960px);padding-top:12px}
+ .scoreboard{padding:10px 12px;gap:7px}.stats{gap:9px;font-size:11px}.stats b{font-size:14px}
+ .score{font-size:23px}.team{font-size:12px}.bottom{align-items:flex-start;font-size:12px}
+ .swing{padding:12px 20px;white-space:nowrap}.hint{max-width:55%}
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <nav class="nav"><a href="../">← 게임장</a><span class="brand">BALLPARK · 01</span></nav>
+  <section class="scoreboard" aria-label="경기 점수">
+    <div class="scoreline"><span class="team">HOME</span><span class="score" id="score">0</span><span class="divider">—</span><span class="team">DERBY</span></div>
+    <div class="stats">
+      <div class="count">B <span class="dots" id="balls"></span></div>
+      <div class="count">S <span class="dots" id="strikes"></span></div>
+      <div>OUT <b id="outs">0</b></div>
+      <div class="bases" aria-label="주자 상황"><span class="base" id="base2"></span><span class="base" id="base3"></span><span class="base" id="base1"></span></div>
+    </div>
+  </section>
+  <section class="stadium" aria-label="야구장">
+    <canvas id="field" width="900" height="520" aria-label="타격 게임 화면"></canvas>
+    <div class="overlay" id="overlay">
+      <div class="panel">
+        <p class="eyebrow">BASEBALL · HOME RUN DERBY</p>
+        <h1 id="title">홈런 더비</h1>
+        <p id="description">날아오는 공에 맞춰 스윙! 타이밍이 완벽하면 담장을 넘길 수 있어.<br>스트라이크 3개면 아웃, 아웃 3개 전에 최대한 많은 점수를 내 봐.</p>
+        <button class="start" id="start">플레이 볼!</button>
+      </div>
+    </div>
+  </section>
+  <div class="bottom">
+    <div class="hint">키보드 <b>SPACE</b> 또는 아래 버튼으로 스윙</div>
+    <button class="swing" id="swing" aria-label="스윙">⚾ 스윙!</button>
+  </div>
+</main>
+<script>
+(()=>{
+const canvas=document.getElementById('field');
+const ctx=canvas.getContext('2d');
+const overlay=document.getElementById('overlay');
+const title=document.getElementById('title');
+const description=document.getElementById('description');
+const scoreEl=document.getElementById('score');
+const outsEl=document.getElementById('outs');
+const ballsEl=document.getElementById('balls');
+const strikesEl=document.getElementById('strikes');
+const basesEls=[1,2,3].map(n=>document.getElementById('base'+n));
+const state={mode:'menu',score:0,outs:0,balls:0,strikes:0,bases:[false,false,false],pitchStart:0,pitchNo:0,swung:false,message:'준비됐나요?',messageUntil:0,swingUntil:0,flight:null,lastTime:0};
+const W=900,H=520;
+function fitCanvas(){const ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=W*ratio;canvas.height=H*ratio;ctx.setTransform(ratio,0,0,ratio,0,0)}
+window.addEventListener('resize',fitCanvas);fitCanvas();
+function dots(el,count,type,total){el.innerHTML='';for(let i=0;i<total;i++){const dot=document.createElement('i');dot.className='dot'+(i<count?' on '+type:'');el.appendChild(dot)}}
+function updateHud(){scoreEl.textContent=state.score;outsEl.textContent=state.outs;dots(ballsEl,state.balls,'ball',3);dots(strikesEl,state.strikes,'strike',2);basesEls.forEach((base,i)=>base.classList.toggle('on',state.bases[i]))}
+function startGame(){state.mode='pitch';state.score=0;state.outs=0;state.balls=0;state.strikes=0;state.bases=[false,false,false];state.pitchNo=0;state.message='투수가 공을 던집니다!';state.messageUntil=performance.now()+1000;overlay.hidden=true;updateHud();nextPitch()}
+function nextPitch(){if(state.mode==='gameover')return;state.mode='pitch';state.pitchStart=performance.now()+650;state.pitchNo++;state.swung=false;state.flight=null}
+function showMessage(text){state.message=text;state.messageUntil=performance.now()+1000}
+function out(reason){state.outs++;state.strikes=0;state.balls=0;updateHud();if(state.outs>=3){state.mode='gameover';title.textContent='GAME OVER';description.innerHTML='최종 점수 <span class="result">'+state.score+'점</span><br>다시 타석에 서서 기록에 도전해 봐!';document.getElementById('start').textContent='다시 도전';overlay.hidden=false;showMessage('경기 종료!');return}state.mode='pause';showMessage(reason+' · 아웃!');setTimeout(nextPitch,1100)}
+function advanceBases(hit){let runs=0;const old=state.bases.slice();if(hit==='HR'){runs=1+old.filter(Boolean).length;state.bases=[false,false,false]}else if(hit==='3B'){runs=old.filter(Boolean).length;state.bases=[false,false,true]}else if(hit==='2B'){runs=(old[1]?1:0)+(old[2]?1:0);state.bases=[false,old[0],true]}else{if(old[2])runs++;state.bases=[true,old[0],old[1]]}state.score+=runs;updateHud();return runs}
+function hitBall(quality){const roll=Math.random();let hit;if(quality==='PERFECT'||(quality==='GREAT'&&roll<.7))hit='HR';else if(quality==='GREAT'&&roll<.9)hit='3B';else if(quality==='GOOD'&&roll<.32)hit='HR';else if((quality==='GOOD'&&roll<.63)||(quality==='OK'&&roll<.16))hit='2B';else if(quality==='OK'&&roll<.31)hit='3B';else hit='1B';const runs=advanceBases(hit);state.mode='flight';state.flight={start:performance.now(),hit,quality};showMessage(quality+'!  '+hit+(runs?' · '+runs+'점':' · 안타'));setTimeout(()=>{if(state.mode==='flight')nextPitch()},1350)}
+function swing(){if(state.mode!=='pitch'||state.swung)return;const now=performance.now();if(now<state.pitchStart)return;state.swung=true;state.swingUntil=now+320;const progress=Math.min(1,(now-state.pitchStart)/1550);const difference=Math.abs(progress-.82);if(difference<.045)hitBall('PERFECT');else if(difference<.095)hitBall('GREAT');else if(difference<.15)hitBall('GOOD');else if(difference<.23){state.strikes=Math.min(2,state.strikes+1);updateHud();state.mode='pause';showMessage(state.strikes>=2?'파울! 2스트라이크':'파울!');if(state.strikes>=2)state.strikes=2;setTimeout(nextPitch,950)}else{state.strikes++;updateHud();if(state.strikes>=3)out('삼진');else{state.mode='pause';showMessage(progress<.82?'헛스윙!':'늦었어!');setTimeout(nextPitch,950)}}}
+function walk(){state.balls=0;if(state.bases[0]){if(state.bases[1]){if(state.bases[2])state.score++;state.bases[2]=true}state.bases[1]=true}state.bases[0]=true;updateHud();state.mode='pause';showMessage('볼넷! 1루 진루');setTimeout(nextPitch,1000)}
+function roundedRect(x,y,w,h,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+function draw(){const now=performance.now();ctx.clearRect(0,0,W,H);
+ const sky=ctx.createLinearGradient(0,0,0,250);sky.addColorStop(0,'#527c77');sky.addColorStop(1,'#b4b17e');ctx.fillStyle=sky;ctx.fillRect(0,0,W,270);
+ ctx.fillStyle='#213b34';ctx.fillRect(0,128,W,105);
+ for(let i=0;i<46;i++){const x=(i*83+21)%W,y=143+(i*47)%74;ctx.fillStyle=['#e8d6a5','#c6d9c4','#d89472','#7da9a0'][i%4];ctx.beginPath();ctx.arc(x,y,3+(i%3),0,Math.PI*2);ctx.fill()}
+ ctx.fillStyle='#d3c28f';ctx.fillRect(0,228,W,15);
+ const grass=ctx.createRadialGradient(450,295,15,450,295,440);grass.addColorStop(0,'#58a052');grass.addColorStop(1,'#246443');ctx.fillStyle=grass;ctx.fillRect(0,243,W,H-243);
+ ctx.fillStyle='#bd9360';ctx.beginPath();ctx.moveTo(450,261);ctx.lineTo(667,390);ctx.lineTo(450,508);ctx.lineTo(233,390);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#408144';ctx.beginPath();ctx.moveTo(450,278);ctx.lineTo(637,390);ctx.lineTo(450,489);ctx.lineTo(263,390);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#bf986a';ctx.beginPath();ctx.moveTo(450,351);ctx.lineTo(535,390);ctx.lineTo(450,438);ctx.lineTo(365,390);ctx.closePath();ctx.fill();
+ ctx.strokeStyle='#f0e2bc';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(450,430);ctx.lineTo(365,390);ctx.lineTo(450,351);ctx.lineTo(535,390);ctx.lineTo(450,430);ctx.stroke();
+ [[365,390],[450,351],[535,390]].forEach(([x,y])=>{ctx.fillStyle='#fff4d5';ctx.fillRect(x-6,y-6,12,12)});
+ ctx.fillStyle='#fff4d5';ctx.beginPath();ctx.moveTo(450,421);ctx.lineTo(462,427);ctx.lineTo(462,438);ctx.lineTo(450,445);ctx.lineTo(438,438);ctx.lineTo(438,427);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#e7e0c8';ctx.fillRect(441,340,18,3);
+ // 투수
+ ctx.fillStyle='#172824';ctx.beginPath();ctx.ellipse(450,340,13,5,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#e8bd92';ctx.beginPath();ctx.arc(450,311,9,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#ec654b';ctx.fillRect(438,319,24,26);ctx.fillStyle='#e9d8bd';ctx.fillRect(440,345,8,17);ctx.fillRect(452,345,8,17);
+ ctx.fillStyle='#263a31';ctx.beginPath();ctx.arc(450,308,10,Math.PI,Math.PI*2);ctx.fill();
+ // 타자
+ const batting=now<state.swingUntil;
+ ctx.fillStyle='#142821';ctx.beginPath();ctx.ellipse(568,433,28,8,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#314853';ctx.fillRect(552,399,11,31);ctx.fillRect(567,399,11,31);
+ ctx.fillStyle='#e8bd92';ctx.beginPath();ctx.arc(564,372,12,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#216f84';ctx.fillRect(548,382,32,28);
+ ctx.strokeStyle='#e8bd92';ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(553,387);ctx.lineTo(batting?523:544,batting?369:400);ctx.moveTo(576,387);ctx.lineTo(batting?531:581,batting?371:400);ctx.stroke();
+ ctx.strokeStyle='#a57643';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(batting?520:553,batting?369:382);ctx.lineTo(batting?467:527,batting?340:331);ctx.stroke();
+ ctx.fillStyle='#192e2a';ctx.beginPath();ctx.arc(564,370,13,Math.PI,Math.PI*2);ctx.fill();
+ // 투구
+ if(state.mode==='pitch'&&now>=state.pitchStart&&!state.swung){const p=Math.min(1,(now-state.pitchStart)/1550);const bx=450+Math.sin(p*2.7)*12,by=333+p*102,r=4+p*7;ctx.fillStyle='#fff3d4';ctx.beginPath();ctx.arc(bx,by,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#d65e52';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(bx,by,r*.7,-1,1);ctx.stroke();if(p>=1){state.balls++;updateHud();if(state.balls>=4)walk();else{state.mode='pause';showMessage('볼!');setTimeout(nextPitch,850)}}}
+ if(state.mode==='flight'&&state.flight){const p=Math.min(1,(now-state.flight.start)/1300),startX=485,startY=350,dx=state.flight.hit==='HR'?210:state.flight.hit==='3B'?155:state.flight.hit==='2B'?105:65;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(startX+dx*p,startY-190*p+80*p*p,Math.max(3,8-5*p),0,Math.PI*2);ctx.fill()}
+ if(state.messageUntil>now){roundedRect(335,42,230,44,15,'#10231dd9');ctx.fillStyle='#fff4d5';ctx.font='900 18px system-ui';ctx.textAlign='center';ctx.fillText(state.message,450,71)}
+ ctx.fillStyle='#e8e1c8';ctx.font='700 12px system-ui';ctx.textAlign='left';ctx.fillText('PITCH '+String(state.pitchNo).padStart(2,'0'),20,30);
+ requestAnimationFrame(draw)}
+document.getElementById('start').addEventListener('click',startGame);
+document.getElementById('swing').addEventListener('pointerdown',e=>{e.preventDefault();swing()});
+window.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();swing()}});
+updateHud();draw();
+})();
+</script>
+</body>
+</html>
