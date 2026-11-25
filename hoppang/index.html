@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#172922">
+<title>호빵 컴퍼니</title>
+<style>
+*{box-sizing:border-box}
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#f6f1e7;background:#111b18}
+body{margin:0;min-width:320px;min-height:100vh;background:radial-gradient(ellipse at 50% -10%,#354e3d,#17241f 50%,#101815)}
+button,input{font:inherit}
+button{cursor:pointer}
+.page{width:min(100% - 32px,1120px);margin:auto;padding:24px 0 38px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:950;letter-spacing:.04em}
+.brand-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:#d7ad62;color:#382614;font-size:24px}
+.brand small{display:block;color:#aab8a7;font-size:10px;letter-spacing:.2em}
+.nav{color:#c6d0c3;text-decoration:none;font-size:13px}
+.overview{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.metric{padding:14px 16px;border:1px solid #ffffff16;border-radius:14px;background:#192720d9}
+.metric-label{color:#9eaf9e;font-size:11px}
+.metric-value{margin-top:5px;font-size:clamp(16px,2.4vw,23px);font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
+.metric-value.money{color:#f3d48e}
+.banner{display:flex;align-items:center;gap:12px;padding:14px 17px;margin-bottom:15px;border:1px solid #d6ad6244;border-radius:15px;background:linear-gradient(100deg,#4036218c,#242d21cc)}
+.banner-icon{font-size:24px}
+.banner-text{font-size:13px;line-height:1.55;color:#e8dfc7}
+.banner-text b{color:#f4d489}
+.layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(290px,.85fr);gap:15px;align-items:start}
+.column{display:grid;gap:15px}
+.panel{overflow:hidden;border:1px solid #ffffff19;border-radius:18px;background:#19251fdd;box-shadow:0 14px 36px #0002}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:17px 18px 13px}
+.panel-head h2{margin:0;font-size:17px}
+.subtle{color:#9aab9a;font-size:11px}
+.market-list{display:grid;gap:8px;padding:0 12px 12px}
+.market-row{display:grid;grid-template-columns:minmax(115px,1.2fr) minmax(95px,.85fr) minmax(80px,.65fr) auto;gap:8px;align-items:center;padding:11px 12px;border:1px solid #ffffff10;border-radius:13px;background:#121d18a8}
+.ingredient{display:flex;align-items:center;gap:9px;min-width:0}
+.ingredient-icon{display:grid;place-items:center;width:36px;height:36px;flex:none;border-radius:11px;background:#29392e;font-size:19px}
+.ingredient-name{font-weight:800;font-size:13px}
+.ingredient-unit{display:block;color:#8f9e8e;font-size:10px}
+.quote{font-size:13px;font-weight:850;font-variant-numeric:tabular-nums;white-space:nowrap}
+.trend{display:block;margin-top:3px;font-size:10px}
+.trend.up{color:#f08d78}.trend.down{color:#83d6a0}.trend.flat{color:#abb7a9}
+.holding{color:#b4c0b3;font-size:11px;white-space:nowrap}
+.trade-buttons{display:flex;gap:5px;justify-content:flex-end}
+.mini-button{min-width:54px;padding:7px 8px;border:1px solid #ffffff1a;border-radius:9px;background:#29382d;color:#e9e9dc;font-size:11px;font-weight:750}
+.mini-button:hover:not(:disabled){filter:brightness(1.2)}
+.mini-button.sell{background:#342d22;color:#e9ca88}
+.mini-button:disabled{opacity:.42;cursor:not-allowed}
+.trade-tools{display:flex;align-items:center;gap:8px;padding:0 17px 14px;color:#aeb9a9;font-size:11px}
+.trade-tools input,.price-input,.batch-input,.name-input{min-width:0;border:1px solid #ffffff23;border-radius:9px;background:#101915;color:#f8f2e5;outline:none}
+.trade-tools input{width:82px;padding:7px 8px}
+.trade-tools input:focus,.price-input:focus,.batch-input:focus,.name-input:focus{border-color:#d6ad62}
+.side-card{padding:16px}
+.side-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.side-head h2{margin:0;font-size:16px}
+.badge{padding:5px 8px;border-radius:999px;background:#26352a;color:#c9d6c6;font-size:10px}
+.recipe{display:grid;gap:8px;margin:12px 0;padding:12px;border-radius:12px;background:#111a16}
+.recipe-line{display:flex;justify-content:space-between;gap:8px;color:#c4cdbd;font-size:12px}
+.recipe-line b{color:#f3e7cf}
+.factory-action{display:grid;grid-template-columns:86px 1fr;gap:9px;margin-top:12px}
+.batch-input{width:100%;padding:10px}
+.primary,.secondary,.close-button{border:0;border-radius:10px;padding:10px 12px;font-weight:850}
+.primary{background:#dfbd78;color:#382a15}
+.primary:hover:not(:disabled){background:#f0d496}
+.primary:disabled{opacity:.45;cursor:not-allowed}
+.secondary{background:#28382e;color:#e4e6d9;border:1px solid #ffffff19}
+.sell-box{padding-top:2px}
+.sale-controls{display:flex;gap:8px;margin:12px 0}
+.price-input{width:130px;padding:10px 11px;font-weight:750}
+.secondary:disabled{opacity:.45;cursor:not-allowed}
+.demand{display:flex;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px solid #ffffff12;color:#aab6a7;font-size:11px}
+.demand strong{color:#eee4ca}
+.factory-empty{padding:18px;border:1px dashed #ffffff22;border-radius:13px;color:#b9c3b4;font-size:12px;line-height:1.6}
+.finish{width:100%;margin-top:12px}
+.history{display:flex;gap:5px;align-items:flex-end;height:28px;min-width:54px}
+.history i{width:4px;min-height:4px;border-radius:3px 3px 0 0;background:#829d7e}
+.tip{padding:13px 16px;color:#aebbab;font-size:11px;line-height:1.65}
+.toast{position:fixed;left:50%;bottom:22px;z-index:5;max-width:min(90vw,540px);padding:11px 17px;border:1px solid #ffffff28;border-radius:999px;background:#111b17;color:#f5efd9;font-size:13px;box-shadow:0 10px 35px #0008;transform:translate(-50%,18px);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.toast.show{transform:translate(-50%,0);opacity:1}
+.overlay{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:18px;background:#080e0cce;backdrop-filter:blur(7px)}
+.overlay[hidden]{display:none}
+.setup-card{width:min(100%,480px);padding:clamp(22px,6vw,36px);border:1px solid #ffffff28;border-radius:22px;background:linear-gradient(145deg,#293b2f,#17241e);box-shadow:0 24px 90px #0009}
+.setup-icon{font-size:36px}
+.eyebrow{margin:5px 0 9px;color:#e5c779;font-size:10px;font-weight:900;letter-spacing:.2em}
+.setup-card h1{margin:0;font-size:clamp(29px,7vw,42px);line-height:1.1}
+.setup-copy{margin:13px 0 19px;color:#c1cebf;font-size:13px;line-height:1.7}
+.name-input{width:100%;padding:13px 14px;font-size:16px}
+.setup-next{width:100%;margin-top:12px;padding:13px}
+.capital-card{display:grid;gap:8px;margin:16px 0;padding:14px;border:1px solid #ffffff12;border-radius:13px;background:#111a16}
+.capital-line{display:flex;justify-content:space-between;gap:12px;color:#c5cfbf;font-size:13px}
+.capital-line b{color:#f0dcac}
+.capital-line.remain{padding-top:8px;border-top:1px solid #ffffff15;font-weight:850}
+.capital-line.remain b{color:#8ed6a0}
+.step-note{min-height:20px;color:#ef9c87;font-size:12px}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.column.right{grid-template-columns:1fr 1fr;align-items:start}}
+@media(max-width:560px){
+ .page{width:min(100% - 20px,1120px);padding-top:14px}
+ .topbar{margin-bottom:13px}.overview{grid-template-columns:repeat(2,1fr);gap:8px}
+ .metric{padding:11px 12px}.banner{align-items:flex-start;padding:12px}
+ .market-row{grid-template-columns:minmax(100px,1.15fr) minmax(83px,.8fr) minmax(63px,.55fr);gap:6px;padding:9px 8px}
+ .trade-buttons{grid-column:1/-1;justify-content:flex-end}
+ .holding{text-align:right;font-size:10px}.mini-button{min-width:72px}
+ .column.right{grid-template-columns:1fr}
+ .history{height:22px}
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon">🥟</span><span><small>WINTER WARMERS INC.</small>호빵 컴퍼니</span></div>
+    <a class="nav" href="../">← 게임장</a>
+  </header>
+  <section class="overview" aria-label="회사 현황">
+    <div class="metric"><div class="metric-label">회사</div><div class="metric-value" id="company-name">새 회사</div></div>
+    <div class="metric"><div class="metric-label">보유 자금</div><div class="metric-value money" id="cash">₩4,000,000,000</div></div>
+    <div class="metric"><div class="metric-label">누적 영업 손익</div><div class="metric-value" id="profit">₩0</div></div>
+    <div class="metric"><div class="metric-label">영업 일수</div><div class="metric-value" id="day">준비 중</div></div>
+  </section>
+  <section class="banner" aria-live="polite">
+    <span class="banner-icon">📊</span>
+    <div class="banner-text"><b id="market-title">시장 브리핑</b><br><span id="market-news">공장 문을 열고 오늘의 시세를 살펴보세요.</span></div>
+  </section>
+  <div class="layout">
+    <div class="column left">
+      <section class="panel" aria-labelledby="market-heading">
+        <div class="panel-head"><h2 id="market-heading">원자재 시장</h2><span class="subtle">시세는 장 마감 때 변해요</span></div>
+        <div class="market-list" id="market-list"></div>
+        <div class="trade-tools"><label for="trade-quantity">거래 수량</label><input id="trade-quantity" type="number" min="0.5" max="1000" step="0.5" value="10"><span>kg</span></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>오늘의 생산 · 판매</h2><span class="subtle">호빵 100개 단위 생산</span></div>
+        <div class="side-card" id="operations"></div>
+      </section>
+    </div>
+    <aside class="column right">
+      <section class="panel"><div class="side-card" id="factory-card"></div></section>
+      <section class="panel">
+        <div class="panel-head"><h2>경영 메모</h2><span class="badge">시장 읽기</span></div>
+        <div class="tip">재료를 살 때는 현재 시세와 최근 가격 흐름을 비교해 봐. 필요한 만큼만 확보하고, 호빵을 생산한 뒤 판매 가격과 오늘의 수요를 살펴보자.</div>
+      </section>
+    </aside>
+  </div>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<section class="overlay" id="setup" aria-modal="true" role="dialog" aria-labelledby="setup-title">
+  <div class="setup-card" id="name-step">
+    <div class="setup-icon">🥟</div>
+    <p class="eyebrow">새로운 회사의 시작</p>
+    <h1 id="setup-title">호빵 회사의<br>이름을 지어 줘!</h1>
+    <p class="setup-copy">회사 이름을 정하고, 가진 자금으로 공장을 세워 보자. 시장을 잘 읽으면 작은 호빵 가게도 큰 회사로 성장할 수 있어.</p>
+    <label class="subtle" for="company-input">회사 이름</label>
+    <input class="name-input" id="company-input" maxlength="20" autocomplete="organization" placeholder="예: 따끈따끈 호빵">
+    <div class="step-note" id="setup-note"></div>
+    <button class="primary setup-next" id="name-next">회사 이름 정하기 →</button>
+  </div>
+  <div class="setup-card" id="factory-step" hidden>
+    <div class="setup-icon">🏭</div>
+    <p class="eyebrow">첫 번째 투자</p>
+    <h1 id="factory-title">공장을 세우자!</h1>
+    <p class="setup-copy">직접 호빵을 만들려면 공장이 필요해. 공장을 세우고 남은 자금으로 재료를 사고 첫 제품을 만들어 보자.</p>
+    <div class="capital-card">
+      <div class="capital-line"><span>시작 자금</span><b>₩4,000,000,000</b></div>
+      <div class="capital-line"><span>공장 건설 비용</span><b>− ₩3,000,000,000</b></div>
+      <div class="capital-line remain"><span>공장 건설 후 보유 자금</span><b>₩1,000,000,000</b></div>
+    </div>
+    <button class="primary setup-next" id="build-factory">₩3,000,000,000으로 공장 세우기</button>
+  </div>
+</section>
+<script>
+(()=>{
+const SAVE_KEY='hoppang-company-save-v1';
+const STARTING_CASH=4000000000;
+const FACTORY_COST=3000000000;
+const BUNS_PER_BATCH=100;
+const OVERHEAD_PER_BATCH=70000;
+const RECIPE={flour:10,bean:6,sugar:2,yeast:.5};
+const INGREDIENTS=[
+ {id:'flour',name:'밀가루',icon:'🌾',base:3200,volatility:.06},
+ {id:'bean',name:'팥앙금',icon:'🫘',base:8600,volatility:.09},
+ {id:'sugar',name:'설탕',icon:'🍚',base:2600,volatility:.05},
+ {id:'yeast',name:'이스트',icon:'🫙',base:12000,volatility:.08}
+];
+const FORECASTS=[
+ {title:'팥 수확 지연',target:'bean',change:.2,description:'산지에 비가 와서 팥 공급이 줄어들 전망이야.'},
+ {title:'팥 풍년 예보',target:'bean',change:-.15,description:'팥 작황이 좋아져 팥 가격이 내려갈 것 같아.'},
+ {title:'밀 수입 운송비 상승',target:'flour',change:.14,description:'운송비가 올라 밀가루 가격이 오를 수 있어.'},
+ {title:'밀 수입 물량 도착',target:'flour',change:-.12,description:'밀가루 공급이 늘어 가격이 안정될 전망이야.'},
+ {title:'설탕 수요 증가',target:'sugar',change:.13,description:'식품 업계 주문이 늘어 설탕 가격이 오를 수 있어.'},
+ {title:'설탕 재고 충분',target:'sugar',change:-.1,description:'시장에 설탕 재고가 넉넉해 가격이 내려갈 것 같아.'},
+ {title:'제빵 수요 증가',target:'yeast',change:.17,description:'제빵 주문이 늘어 이스트가 귀해질 전망이야.'},
+ {title:'원료 공급 원활',target:null,change:0,description:'원료 공급이 대체로 안정적이야. 시세를 천천히 살펴보자.'}
+];
+const $=id=>document.getElementById(id);
+const money=new Intl.NumberFormat('ko-KR',{maximumFractionDigits:0});
+const amount=new Intl.NumberFormat('ko-KR',{maximumFractionDigits:1});
+const state={
+ companyName:'',cash:STARTING_CASH,profit:0,day:1,factoryBuilt:false,
+ materials:{flour:{qty:0,avgCost:0},bean:{qty:0,avgCost:0},sugar:{qty:0,avgCost:0},yeast:{qty:0,avgCost:0}},
+ prices:{},history:{},buns:0,bunUnitCost:0,retailPrice:2500,demand:220,soldToday:0,forecast:null,lastNews:'공장 문을 열고 오늘의 시세를 살펴보세요.'
+};
+let toastTimer;
+let loadWarning='';
+INGREDIENTS.forEach(item=>{state.prices[item.id]=item.base;state.history[item.id]=[item.base]});
+function formatMoney(value){return '₩'+money.format(Math.round(value))}
+function formatAmount(value){return amount.format(value)}
+function randomDemand(){return 190+Math.floor(Math.random()*91)}
+function makeForecast(){return FORECASTS[Math.floor(Math.random()*FORECASTS.length)]}
+function showToast(message){
+ const toast=$('toast');
+ toast.textContent=message;
+ toast.classList.add('show');
+ clearTimeout(toastTimer);
+ toastTimer=setTimeout(()=>toast.classList.remove('show'),2600);
+}
+function saveGame(){
+ try{localStorage.setItem(SAVE_KEY,JSON.stringify(state))}
+ catch(error){console.error('게임 저장에 실패했습니다.',error);showToast('저장하지 못했어요. 브라우저 저장 공간을 확인해 주세요.')}
+}
+function loadGame(){
+ let raw;
+ try{raw=localStorage.getItem(SAVE_KEY)}
+ catch(error){console.error('저장된 게임을 읽지 못했습니다.',error);loadWarning='저장 데이터를 읽지 못해 새 게임으로 시작해요.';return}
+ if(!raw)return;
+ try{
+  const saved=JSON.parse(raw);
+  const valid=saved&&typeof saved.companyName==='string'&&Number.isFinite(saved.cash)&&Number.isFinite(saved.profit)&&Number.isInteger(saved.day)&&saved.day>=1&&typeof saved.factoryBuilt==='boolean'&&saved.materials&&saved.prices&&saved.history;
+  if(!valid)throw new Error('저장 데이터 형식이 올바르지 않습니다.');
+  state.companyName=saved.companyName.slice(0,20);
+  state.cash=Math.max(0,saved.cash);
+  state.profit=saved.profit;
+  state.day=saved.day;
+  state.factoryBuilt=saved.factoryBuilt;
+  INGREDIENTS.forEach(item=>{
+   const material=saved.materials[item.id];
+   const price=saved.prices[item.id];
+   const history=saved.history[item.id];
+   if(!material||!Number.isFinite(material.qty)||!Number.isFinite(material.avgCost)||!Number.isFinite(price)||!Array.isArray(history))throw new Error('원자재 저장 데이터가 올바르지 않습니다.');
+   state.materials[item.id]={qty:Math.max(0,material.qty),avgCost:Math.max(0,material.avgCost)};
+   state.prices[item.id]=Math.max(1,price);
+   state.history[item.id]=history.filter(Number.isFinite).slice(-12);
+   if(!state.history[item.id].length)state.history[item.id]=[state.prices[item.id]];
+  });
+  state.buns=Number.isInteger(saved.buns)?Math.max(0,saved.buns):0;
+  state.bunUnitCost=Number.isFinite(saved.bunUnitCost)?Math.max(0,saved.bunUnitCost):0;
+  state.retailPrice=Number.isFinite(saved.retailPrice)?Math.max(500,saved.retailPrice):2500;
+  state.demand=Number.isInteger(saved.demand)?Math.max(0,saved.demand):randomDemand();
+  state.soldToday=Number.isInteger(saved.soldToday)?Math.max(0,saved.soldToday):0;
+  state.forecast=saved.forecast&&typeof saved.forecast.description==='string'?saved.forecast:makeForecast();
+  state.lastNews=typeof saved.lastNews==='string'?saved.lastNews:'시장 시세를 살펴보자.';
+ }catch(error){console.error('저장된 게임 데이터가 손상되었습니다.',error);loadWarning='저장 데이터를 읽지 못해 새 게임으로 시작해요.'}
+}
+function showSetup(){
+ const setup=$('setup');
+ if(state.factoryBuilt){setup.hidden=true;return}
+ setup.hidden=false;
+ if(state.companyName){
+  $('company-input').value=state.companyName;
+  $('name-step').hidden=true;
+  $('factory-step').hidden=false;
+  $('factory-title').textContent=state.companyName+'의 첫 공장!';
+ }else if(loadWarning){$('setup-note').textContent=loadWarning}
+}
+function getDemandAtPrice(atPrice=state.retailPrice){
+ const price=Math.max(500,Number(atPrice)||2500);
+ const ratio=Math.max(.4,Math.min(1.8,Math.pow(2500/price,1.15)));
+ return Math.max(30,Math.round(state.demand*ratio));
+}
+function remainingDemand(atPrice=state.retailPrice){return Math.max(0,getDemandAtPrice(atPrice)-state.soldToday)}
+function maxBatches(){
+ const possible=INGREDIENTS.map(item=>Math.floor((state.materials[item.id].qty+1e-8)/RECIPE[item.id]));
+ const byIngredients=Math.min(...possible);
+ const byCash=Math.floor(state.cash/OVERHEAD_PER_BATCH);
+ return Math.max(0,Math.min(byIngredients,byCash))
+}
+function sparkline(values){
+ const points=values.slice(-8);
+ if(points.length<2)return '<div class="history" aria-label="가격 흐름 데이터 수집 중"></div>';
+ const low=Math.min(...points),high=Math.max(...points),span=high-low||1;
+ return '<div class="history" aria-label="최근 가격 흐름">'+points.map(value=>'<i style="height:'+Math.max(4,Math.round(8+((value-low)/span)*18))+'px"></i>').join('')+'</div>';
+}
+function priceTrend(item){
+ const history=state.history[item.id];
+ if(history.length<2)return {label:'새 시세',className:'flat'};
+ const change=(state.prices[item.id]/history[history.length-2]-1)*100;
+ if(Math.abs(change)<.5)return {label:'→ 보합',className:'flat'};
+ return change>0?{label:'▲ '+Math.abs(change).toFixed(1)+'%',className:'up'}:{label:'▼ '+Math.abs(change).toFixed(1)+'%',className:'down'};
+}
+function renderMarket(){
+ const list=$('market-list');
+ list.innerHTML=INGREDIENTS.map(item=>{
+  const material=state.materials[item.id];
+  const trend=priceTrend(item);
+  const price=state.prices[item.id];
+  return '<article class="market-row">'+
+   '<div class="ingredient"><span class="ingredient-icon">'+item.icon+'</span><span><span class="ingredient-name">'+item.name+'</span><span class="ingredient-unit">원 / kg</span></span></div>'+
+   '<div><div class="quote">'+formatMoney(price)+'</div><span class="trend '+trend.className+'">'+trend.label+'</span></div>'+
+   '<div>'+sparkline(state.history[item.id])+'<div class="holding">보유 '+formatAmount(material.qty)+'kg</div></div>'+
+   '<div class="trade-buttons"><button class="mini-button" data-action="buy" data-id="'+item.id+'" '+(state.cash<price*.5?'disabled':'')+'>매입</button><button class="mini-button sell" data-action="sell" data-id="'+item.id+'" '+(material.qty<.5?'disabled':'')+'>매도</button></div>'+
+  '</article>';
+ }).join('');
+}
+function renderFactory(){
+ const card=$('factory-card');
+ card.innerHTML='<div class="side-head"><h2>우리 공장</h2><span class="badge">'+(state.factoryBuilt?'가동 준비':'건설 대기')+'</span></div>'+
+  (state.factoryBuilt?
+   '<div class="factory-empty">🏭 <b>'+escapeHTML(state.companyName)+'</b> 공장<br>호빵 재고 <b>'+money.format(state.buns)+'개</b><br>현재 생산 가능량 <b>'+money.format(maxBatches())+'묶음</b></div>'+
+   '<div class="recipe">'+INGREDIENTS.map(item=>'<div class="recipe-line"><span>'+item.icon+' '+item.name+'</span><b>'+formatAmount(RECIPE[item.id])+' kg</b></div>').join('')+
+    '<div class="recipe-line"><span>⚡ 전기 · 🧑‍🍳 인건비</span><b>'+formatMoney(OVERHEAD_PER_BATCH)+'</b></div></div>'+
+   '<div class="subtle">한 묶음 = 호빵 100개 · 오늘 재료 평균 매입가로 원가를 계산해.</div>'+
+   '<div class="factory-action"><input class="batch-input" id="batch-count" type="number" min="1" max="100" step="1" value="1" aria-label="생산 묶음 수"><button class="primary" data-action="produce" '+(maxBatches()<1?'disabled':'')+'>호빵 생산</button></div>'
+   :'<div class="factory-empty">공장 문을 열면 이곳에서 생산할 수 있어.</div>');
+ $('operations').innerHTML=state.factoryBuilt?
+  '<div class="sell-box"><div class="factory-empty">오늘의 손님 예상 <b>'+money.format(getDemandAtPrice())+'명</b><br>남은 손님 <b>'+money.format(remainingDemand())+'명</b> · 호빵 재고 <b>'+money.format(state.buns)+'개</b></div>'+
+   '<div class="sale-controls"><label class="subtle" for="retail-price" style="align-self:center">판매가 / 개</label><input class="price-input" id="retail-price" type="number" min="500" max="20000" step="100" value="'+Math.round(state.retailPrice)+'"><button class="secondary" data-action="sell-buns" '+(state.buns<1||remainingDemand()<1?'disabled':'')+'>판매</button></div>'+
+   '<div class="demand"><span>가격이 높으면 손님이 줄어들 수 있어.</span><strong>영업 '+state.day+'일차</strong></div>'+
+   '<button class="primary finish" data-action="close-day">오늘 장 마감 · 다음 날 →</button></div>'
+  :'<div class="factory-empty">먼저 회사 이름을 정하고 공장을 세워야 재료를 가공하고 호빵을 팔 수 있어.</div>';
+}
+function escapeHTML(text){return text.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}
+function render(){
+ $('company-name').textContent=state.companyName||'새 회사';
+ $('cash').textContent=formatMoney(state.cash);
+ $('profit').textContent=formatMoney(state.profit);
+ $('profit').style.color=state.profit>0?'#8ed6a0':state.profit<0?'#ef9b86':'';
+ $('day').textContent=state.factoryBuilt?'제 '+state.day+'일':'준비 중';
+ $('market-title').textContent=state.forecast?'시장 예보 · '+state.forecast.title:'시장 브리핑';
+ $('market-news').textContent=state.forecast?state.forecast.description+' 내일 시세가 변하니 필요한 재료를 미리 살펴봐.':state.lastNews;
+ renderMarket();renderFactory();showSetup();
+}
+function buyMaterial(id){
+ const item=INGREDIENTS.find(entry=>entry.id===id);
+ if(!item)return;
+ const input=Number($('trade-quantity').value);
+ if(!Number.isFinite(input)||input<.5){showToast('매입할 수량을 0.5kg 이상 입력해 줘.');return}
+ const requested=Math.min(1000,Math.round(input*2)/2);
+ const affordable=Math.floor((state.cash/state.prices[id])*2)/2;
+ const quantity=Math.min(requested,affordable);
+ if(quantity<.5){showToast('재료를 살 자금이 부족해.');return}
+ const cost=Math.round(quantity*state.prices[id]);
+ const stock=state.materials[id];
+ stock.avgCost=(stock.qty*stock.avgCost+cost)/(stock.qty+quantity);
+ stock.qty+=quantity;state.cash-=cost;
+ saveGame();render();
+ showToast(item.name+' '+formatAmount(quantity)+'kg 매입 · '+formatMoney(cost));
+}
+function sellMaterial(id){
+ const item=INGREDIENTS.find(entry=>entry.id===id);
+ if(!item)return;
+ const input=Number($('trade-quantity').value);
+ if(!Number.isFinite(input)||input<.5){showToast('매도할 수량을 0.5kg 이상 입력해 줘.');return}
+ const stock=state.materials[id];
+ const quantity=Math.min(stock.qty,Math.min(1000,Math.round(input*2)/2));
+ if(quantity<.5){showToast('매도할 재료가 부족해.');return}
+ const revenue=Math.round(quantity*state.prices[id]);
+ state.cash+=revenue;state.profit+=revenue-quantity*stock.avgCost;stock.qty-=quantity;
+ if(stock.qty<1e-8){stock.qty=0;stock.avgCost=0}
+ saveGame();render();
+ showToast(item.name+' '+formatAmount(quantity)+'kg 매도 · '+formatMoney(revenue));
+}
+function produceBuns(){
+ const requested=Number.parseInt($('batch-count').value,10);
+ if(!Number.isInteger(requested)||requested<1){showToast('생산 묶음 수를 1개 이상 입력해 줘.');return}
+ const batches=Math.min(requested,maxBatches());
+ if(batches<1){showToast('재료나 전기·인건비가 부족해. 시장에서 필요한 재료를 확인해 봐.');return}
+ let ingredientsCost=0;
+ INGREDIENTS.forEach(item=>{
+  const stock=state.materials[item.id],used=RECIPE[item.id]*batches;
+  ingredientsCost+=used*stock.avgCost;stock.qty=Math.max(0,stock.qty-used);
+  if(stock.qty<1e-8){stock.qty=0;stock.avgCost=0}
+ });
+ const overhead=OVERHEAD_PER_BATCH*batches;
+ state.cash-=overhead;state.profit-=overhead;
+ const produced=BUNS_PER_BATCH*batches,unitCost=ingredientsCost/produced;
+ state.bunUnitCost=state.buns?((state.buns*state.bunUnitCost+produced*unitCost)/(state.buns+produced)):unitCost;
+ state.buns+=produced;
+ saveGame();render();
+ showToast((batches<requested?'재료에 맞춰 ':'')+'호빵 '+money.format(produced)+'개 생산 완료!');
+}
+function sellBuns(silent){
+ const price=Math.round(Number($('retail-price').value));
+ if(!Number.isFinite(price)||price<500||price>20000){if(!silent)showToast('판매가는 500원에서 20,000원 사이로 정해 줘.');return 0}
+ state.retailPrice=price;
+ const sold=Math.min(state.buns,remainingDemand(price));
+ if(!sold){if(!silent)showToast(state.buns?'오늘의 손님을 모두 만났어. 내일 다시 팔아 보자!':'판매할 호빵이 없어. 먼저 공장에서 생산해 줘.');return 0}
+ const revenue=sold*price,cost=sold*state.bunUnitCost;
+ state.buns-=sold;state.soldToday+=sold;state.cash+=revenue;state.profit+=revenue-cost;
+ if(state.buns===0)state.bunUnitCost=0;
+ saveGame();render();
+ if(!silent)showToast(money.format(sold)+'개 판매 · 매출 '+formatMoney(revenue)+' · 손익 '+formatMoney(revenue-cost));
+ return sold;
+}
+function closeDay(){
+ const sold=sellBuns(true);
+ const previousForecast=state.forecast;
+ const changes=[];
+ INGREDIENTS.forEach(item=>{
+  const normalMove=(Math.random()*2-1)*item.volatility;
+  const eventMove=previousForecast&&previousForecast.target===item.id?previousForecast.change:0;
+  const old=state.prices[item.id];
+  const limitLow=item.base*.4,limitHigh=item.base*2.5;
+  state.prices[item.id]=Math.round(Math.max(limitLow,Math.min(limitHigh,old*(1+normalMove+eventMove))));
+  state.history[item.id].push(state.prices[item.id]);state.history[item.id]=state.history[item.id].slice(-12);
+  const change=(state.prices[item.id]/old-1)*100;
+  changes.push({name:item.name,change});
+ });
+ state.day++;
+ state.demand=randomDemand();state.soldToday=0;state.forecast=makeForecast();
+ const shifted=changes.filter(item=>Math.abs(item.change)>=.5).sort((a,b)=>Math.abs(b.change)-Math.abs(a.change)).slice(0,2);
+ const marketNote=shifted.length?shifted.map(item=>item.name+' '+(item.change>0?'▲':'▼')+Math.abs(item.change).toFixed(1)+'%').join(' · '):'원자재 가격 대체로 보합';
+ state.lastNews='오늘 '+(sold?money.format(sold)+'개 판매 · ':'')+marketNote+'. '+(previousForecast?previousForecast.description:'');
+ saveGame();render();
+ showToast('영업 '+(state.day-1)+'일차 마감 · '+(sold?'호빵 '+money.format(sold)+'개 판매':'판매 완료')+' · 시세가 갱신됐어.');
+}
+function buildFactory(){
+ if(state.factoryBuilt)return;
+ if(!state.companyName){showToast('먼저 회사 이름을 정해 줘.');return}
+ if(state.cash<FACTORY_COST){showToast('공장을 세울 자금이 부족해.');return}
+ state.cash-=FACTORY_COST;state.factoryBuilt=true;state.forecast=makeForecast();state.demand=randomDemand();
+ saveGame();render();
+ showToast(state.companyName+' 공장 완공! 남은 자금 '+formatMoney(state.cash));
+}
+$('name-next').addEventListener('click',()=>{
+ const name=$('company-input').value.trim().slice(0,20);
+ if(!name){$('setup-note').textContent='회사 이름을 입력해 줘.';$('company-input').focus();return}
+ state.companyName=name;
+ $('factory-title').textContent=name+'의 첫 공장!';
+ $('name-step').hidden=true;$('factory-step').hidden=false;
+ saveGame();
+});
+$('company-input').addEventListener('keydown',event=>{if(event.key==='Enter')$('name-next').click()});
+$('build-factory').addEventListener('click',buildFactory);
+$('market-list').addEventListener('click',event=>{
+ const button=event.target.closest('button[data-action]');
+ if(!button||button.disabled)return;
+ if(button.dataset.action==='buy')buyMaterial(button.dataset.id);
+ if(button.dataset.action==='sell')sellMaterial(button.dataset.id);
+});
+document.querySelector('.layout').addEventListener('click',event=>{
+ const button=event.target.closest('button[data-action]');
+ if(!button||button.disabled)return;
+ if(button.dataset.action==='produce')produceBuns();
+ if(button.dataset.action==='sell-buns')sellBuns(false);
+ if(button.dataset.action==='close-day')closeDay();
+});
+$('operations').addEventListener('change',event=>{
+ if(event.target.id==='retail-price'){
+  const price=Math.round(Number(event.target.value));
+  if(Number.isFinite(price)&&price>=500&&price<=20000){state.retailPrice=price;saveGame();render()}
+ }
+});
+window.addEventListener('beforeunload',saveGame);
+loadGame();render();
+if(loadWarning)showToast(loadWarning);
+})();
+</script>
+</body>
+</html>
